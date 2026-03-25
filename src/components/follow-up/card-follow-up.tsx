@@ -192,7 +192,6 @@ export default function CardFollowUp({
         followUp={followUpd}
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
-        token={token}
       />
     </>
   );
