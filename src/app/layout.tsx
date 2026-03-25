@@ -1,5 +1,5 @@
 // import type { Metadata } from "next";
-import AuthSessionProvider from "@/components/AuthSessionProvider";
+import AuthSessionProvider from "@/components/layout/AuthSessionProvider";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";

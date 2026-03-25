@@ -4,7 +4,6 @@ import AddFollowUpModal from "@/components/follow-up/add-follow-up-modal";
 import DeleteFollowUpModal from "@/components/follow-up/delete-follow-up-modal";
 import DetailsModal from "@/components/follow-up/details-modal";
 import FollowUpsTable from "@/components/follow-up/follow-ups-table";
-import LoadingSkeleton from "@/components/follow-up/loading-skeleton";
 import { useFollowUpStore } from "@/context/follow-up-context";
 import { useMetaTemplatesStore } from "@/context/meta-templates-context";
 import type { EventRules } from "@/types/api-collection";
@@ -27,21 +26,18 @@ export default function FollowUpsPage() {
   const { isLoading, error, setFollowUps, setLoading, setError } =
     useFollowUpStore();
 
-  const hasCalledEffect = useRef(false);
   const hasFetchedData = useRef(false);
 
-  useEffect(() => {
-    if (hasCalledEffect.current) return;
-    hasCalledEffect.current = true;
-    getFollowUps();
-  }, []);
-
-  // Effect to fetch data when token is available
+  const init = async () => {
+    const followUps = await getFollowUps();
+    setFollowUps(followUps);
+    getStoredMetaTemplates();
+  }
+  
   useEffect(() => {
     if (!hasFetchedData.current) {
       hasFetchedData.current = true;
-      getFollowUps();
-      getStoredMetaTemplates();
+      init();
     }
   }, []);
 
