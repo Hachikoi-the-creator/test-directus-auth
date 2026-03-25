@@ -1,0 +1,162 @@
+// repated code for rendering options in objects
+{selection.tableType && selection.propertyPath.length > 0 && (
+          <div className="space-y-2">
+            {/* Existing Property Path Items */}
+            {selection.propertyPath.map((prop, index) => {
+              // Get sample data to explore properties
+              const sampleData = getTableData(selection.tableType);
+              if (!sampleData || sampleData.length === 0) return null;
+
+              const sampleItem = sampleData[0];
+              const currentObj =
+                index === 0
+                  ? sampleItem
+                  : getNestedValue(
+                      sampleItem,
+                      selection.propertyPath.slice(0, index)
+                    );
+
+              if (!currentObj) return null;
+
+              const availableKeys = getObjectKeys(currentObj);
+              const propertyOptions = availableKeys.map((key) => {
+                // For custom fields that contain JSON, show an indicator
+                if (key.toLowerCase().includes("custom")) {
+                  const value = currentObj[key];
+                  if (typeof value === "string") {
+                    try {
+                      const parsed = JSON.parse(value);
+                      if (parsed && typeof parsed === "object") {
+                        return {
+                          value: key,
+                          label: `${key} (JSON: ${Object.keys(parsed).length} properties)`,
+                        };
+                      }
+                    } catch {
+                      // Not JSON
+                    }
+                  }
+                }
+                return {
+                  value: key,
+                  label: key,
+                };
+              });
+
+              return (
+                <CustomSelect
+                  key={index}
+                  value={prop}
+                  onValueChange={(value) => {
+                    const newPath = [
+                      ...selection.propertyPath.slice(0, index),
+                      value,
+                    ];
+                    handleVariableSelection(key, {
+                      ...selection,
+                      propertyPath: newPath,
+                    });
+                  }}
+                  placeholder="Select property"
+                  options={propertyOptions}
+                />
+              );
+            })}
+
+            {/* Cascading Custom Field Dropdowns */}
+            {(() => {
+              // Check if the last selected property is a custom field that can be expanded
+              if (selection.propertyPath.length === 0) return null;
+
+              const lastProperty =
+                selection.propertyPath[selection.propertyPath.length - 1];
+
+              // Get sample data to explore properties
+              const sampleData = getTableData(selection.tableType);
+              if (!sampleData || sampleData.length === 0) return null;
+
+              const sampleItem = sampleData[0];
+              const currentObj = sampleItem;
+
+              // Check if this is a custom field that can be expanded
+              if (
+                lastProperty.toLowerCase().includes("custom") &&
+                canExpandNestedObject(currentObj, selection.propertyPath)
+              ) {
+                const nestedOptions = getCustomFieldNestedOptions(
+                  currentObj,
+                  lastProperty
+                );
+
+                if (nestedOptions.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">
+                        Select nested property:
+                      </div>
+                      <CustomSelect
+                        value=""
+                        onValueChange={(value) => {
+                          if (value) {
+                            handleVariableSelection(key, {
+                              ...selection,
+                              propertyPath: [...selection.propertyPath, value],
+                            });
+                          }
+                        }}
+                        placeholder="Select nested property..."
+                        options={nestedOptions}
+                      />
+                    </div>
+                  );
+                }
+              }
+
+              // Check if any nested value can be expanded further
+              const currentValue = getNestedValue(
+                currentObj,
+                selection.propertyPath
+              );
+              if (
+                currentValue &&
+                typeof currentValue === "object" &&
+                !Array.isArray(currentValue)
+              ) {
+                const nestedKeys = Object.keys(currentValue).filter(
+                  (key) =>
+                    currentValue[key] !== null &&
+                    currentValue[key] !== undefined &&
+                    typeof currentValue[key] !== "function"
+                );
+
+                if (nestedKeys.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">
+                        Select nested property:
+                      </div>
+                      <CustomSelect
+                        value=""
+                        onValueChange={(value) => {
+                          if (value) {
+                            handleVariableSelection(key, {
+                              ...selection,
+                              propertyPath: [...selection.propertyPath, value],
+                            });
+                          }
+                        }}
+                        placeholder="Select nested property..."
+                        options={nestedKeys.map((nestedKey) => ({
+                          value: nestedKey,
+                          label: nestedKey,
+                        }))}
+                      />
+                    </div>
+                  );
+                }
+              }
+
+              return null;
+            })()}
+          </div>
+        )}
